@@ -1,0 +1,11 @@
+node_modules
+www/*.js
+www/*.map
+www/**/*.js
+www/**/*.map
+www/*.html
+www/**/*.html
+www/**/*.json
+www/src/Assets/*
+www/src/Assets/**/*
+www/src/Css/index.css
