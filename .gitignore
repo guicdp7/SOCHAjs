@@ -1,6 +1,7 @@
 platforms
 plugins
 typings
+hooks
 .vscode
 node_modules
 www/*.js
