@@ -1,3 +1,3 @@
-![](/wwwDev/src/Assets/img/logo.png =250x250)
+![](/wwwDev/src/Assets/img/logo.png)
 # SOCHAjs
 Simple Organization for Cordova Hybrid Applications
