@@ -1,4 +1,4 @@
-class Database extends Model{
+class Appdatabase extends Model{
     /*Eventos Iniciais */
     constructor() {
         super();
@@ -6,8 +6,9 @@ class Database extends Model{
     }
     /*Funções Publicas */
     select(table, items = [], where = {}, end = (r) => {}, forceOnline = false){
-        const self = this, totalBase = super.select(table);
-        let localData = super.select(table, items, where);
+        const selfSelect = super.select;
+        const self = this, totalBase = selfSelect(table);
+        let localData = selfSelect(table, items, where);
         if (App.empty(totalBase) || forceOnline){
             const apiTable = new Api("update/tables?table=" + table, { retorno: "json" });
             apiTable.send((r) => {
@@ -15,7 +16,7 @@ class Database extends Model{
                     if (!r.error){
                         self.delete(tab);
                         self.insert(tab, r);
-                        localData = super.select(table, items, where);
+                        localData = selfSelect(table, items, where);
                     }
                     else{
                         console.log(r.error);

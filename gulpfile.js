@@ -5,8 +5,7 @@ const gulp = require('gulp'),
     htmlmin = require('gulp-htmlmin'),
     uglify = require('gulp-uglify'),
     babel = require('gulp-babel'),
-    jsonminify = require('gulp-jsonminify'),
-    sourcemaps = require('gulp-sourcemaps');
+    jsonminify = require('gulp-jsonminify');
 
 /*Paths */
 const path = {
@@ -15,8 +14,8 @@ const path = {
         dest: "./www/src/Assets/"
     },
     scss: {
-        watch: "./wwwDev/src/Scss/**/*.scss",
-        dev: "./wwwDev/src/Scss/main/index.scss",
+        watch: "./wwwDev/src/Scss/*.scss",
+        dev: "./wwwDev/src/Scss/index.scss",
         dest: "./www/src/Css"
     },
     html: {
@@ -64,7 +63,14 @@ const scssProdOpt = {
 }, htmlMinOpt = {
     collapseWhitespace: true
 }, babelOpt = {
-    presets: ["@babel/preset-env"]
+    presets: [
+        [
+            "@babel/preset-env",
+            {
+                "targets": "> 0.25%, not dead"
+            }
+        ]
+    ]
 };
 /*json */
 function json() {
@@ -80,7 +86,7 @@ function assets() {
 };
 /*styles */
 function styles() {
-    return gulp.src(path.scss.dev, { sourcemaps: true })
+    return gulp.src(path.scss.dev, { sourcemaps: true, allowEmpty: true })
         .pipe(sass(scssProdOpt).on('error', sass.logError))
         .pipe(autoprefixer(prefixOpt))
         .pipe(gulp.dest(path.scss.dest));
@@ -100,10 +106,8 @@ function htmlView() {
 /*javascript */
 function scripts() {
     return gulp.src(path.js.root.dev)
-        .pipe(sourcemaps.init())
         .pipe(babel(babelOpt))
         .pipe(uglify())
-        .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest(path.js.root.dest));
 };
 function srcScripts() {

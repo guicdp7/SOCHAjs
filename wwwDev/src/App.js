@@ -5,6 +5,7 @@ class App {
     constructor() {
         /*Variáveis */
         this.divApp = null;
+        this.thisUser = null;
 
         /*Status do App */
         this._updateStatus = App.get("updateStatus");
@@ -56,11 +57,13 @@ class App {
     }
     /*O App já carregou */
     onAppReady() {
+        Loader.show();
         if (!App.getAppStatus.appReady) {
             this._changeAppStatus("appReady");
             this.divApp = App.$("#divApp");
             this.checkUpdates(() => {
-                App.openPage("Specification");
+                Loader.hide();
+                App.openPage("Home");
             });
         }
         else {
@@ -96,9 +99,17 @@ class App {
     _getAppData(end = () => { }) {
         const apiUpdate = new Api("update", { retorno: "json" });
         apiUpdate.send((r) => {
-            if (!App.empty(r.tables)) {
-                const db = new Database();
-                db.updateTables(r.tables, end);
+            if (!App.empty(r)){
+                if (!App.empty(r.tables)) {
+                    const db = new Appdatabase();
+                    db.updateTables(r.tables, end);
+                }
+                else{
+                    end();
+                }
+            }
+            else{
+                end();
             }
         });
     }
@@ -115,19 +126,18 @@ class App {
     }
     _readDefaultClasses(end = () => { }) {
         const classes = App.default.classes;
-        let i = 0;
-        const add = () => {
-            if (i < classes.length) {
-                App.import(classes[i], () => {
-                    i++;
-                    add();
+        let count = 0;
+        const add = (defaultClass) => {
+            if (count < classes.length && defaultClass) {
+                App.import(defaultClass, () => {
+                    add(classes[++count]);
                 });
             }
             else {
-                end();
+                end(classes[++count]);
             }
         };
-        add();
+        add(classes[count]);
     }
     _readDefaultScripts(end = () => { }) {
         const scripts = App.default.scripts;
@@ -146,14 +156,14 @@ class App {
         add();
     }
     /*Variáveis Getter e Setter Static */
-    static get getAppLanguage(){
+    static get getAppLanguage() {
         const appLang = App.get("appLang");
         return !App.empty(appLang) ? appLang : "pt-br";
     }
     static get getAppStatus() {
         return App.get("appStatus", "global");
     }
-    static set setAppLanguage(value){
+    static set setAppLanguage(value) {
         App.set("appLang", value);
     }
     static set setAppStatus(value) {
@@ -163,7 +173,7 @@ class App {
         return {
             name: "SOCHAjs",
             defaultColor: "#ffffff",
-            apiLink: "http://your.api.here"
+            apiLink: "http://sochajs.esy.es/"
         };
     }
     static get default() {
@@ -177,7 +187,7 @@ class App {
                 "View",
                 "Controller",
                 "Model/Language",
-                "Model/Database",
+                "Model/Appdatabase",
                 "Model/Library",
                 "Model/Loader",
                 "Model/Api",
@@ -258,19 +268,24 @@ class App {
         return false;
     }
     static ajax(url, end = (r, s) => { }, method = "GET", responseType = "json", data = {}, headers = []) {
-        const HttpReq = XMLHttpRequest ? XMLHttpRequest : ActiveXObject("Microsoft.XMLHTTP");
-        if (url.indexOf("://") == -1) {
-            url = App.getAppPath + url;
-        }
-        const req = new HttpReq();
-        req.open(method, url, true);
-        for (let key in headers) {
-            req.setRequestHeader(key, headers[key]);
-        }
-        req.responseType = responseType;
-        req.onload = () => end(req.response, req.status);
-        req.onerror = (e) => end({ error: req.response }, req.status);
-        req.send(App.getHttpQueryByObject(data));
+        const req = jQuery.ajax({
+            url: url,
+            cache: false,
+            method: method,
+            dataType: responseType,
+            data: App.getHttpQueryByObject(data),
+            beforeSend: (r) => {
+                for (let key in headers) {
+                    r.setRequestHeader(key, headers[key]);
+                }
+            },
+            success: (data, textStatus, xhr) => {
+                end(data, xhr.status);
+            },
+            error: (data, textStatus, xhr) => {
+                end(null, xhr.status);
+            }
+        });
         return req;
     }
     static arrayPush(array1 = [], array2 = [], type = "array") {
@@ -298,6 +313,7 @@ class App {
     }
     static class(action = "add", elements = [], classes = []) {
         if (!App.empty(elements)) {
+            action = action == "has" ? "contains" : action;
             if (!Array.isArray(elements)) {
                 if (!elements[0] && elements !== false) {
                     elements = [elements];
@@ -308,11 +324,23 @@ class App {
             }
             for (let i = 0; i < elements.length; i++) {
                 let elmt = elements[i];
-                if (typeof elmt == "string"){
+                if (typeof elmt == "string") {
                     elmt = App.$(elmt);
                 }
-                for (let j = 0; j < classes.length; j++) {
-                    elmt.classList[action](classes[j]);
+                if (action == "contains"){
+                    let hasClass = true;
+                    for (let j = 0; j < classes.length; j++) {
+                        hasClass = elmt.classList[action](classes[j]);
+                        if (!hasClass){
+                            break;
+                        }
+                    }
+                    classes = hasClass;
+                }
+                else{
+                    for (let j = 0; j < classes.length; j++) {
+                        elmt.classList[action](classes[j]);
+                    }
                 }
             }
         }
@@ -366,12 +394,12 @@ class App {
         }
         return true;
     }
-    static firstLetter(text = "", action = "upper"){
+    static firstLetter(text = "", action = "upper") {
         let result = text;
-        if (action == "upper"){
+        if (action == "upper") {
             result = text.charAt(0).toUpperCase() + text.slice(1);
         }
-        else if (action == "lower"){
+        else if (action == "lower") {
             result = text.charAt(0).toLowerCase() + text.slice(1);
         }
         return result;
@@ -474,6 +502,7 @@ class App {
                             if (!App.empty(includeHtmlAttribute)) {
                                 element.removeAttribute("include-html");
                             }
+                            element.setAttribute("data-included-id", fileId);
                         });
                     }
                     else {
@@ -659,3 +688,4 @@ class App {
         return value;
     }
 }
+const app = new App();

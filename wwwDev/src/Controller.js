@@ -86,7 +86,7 @@ class Controller extends App{
                 self._executeIncludeAttributes(args, (ac, vd) => {
                     vd[pageId] = self.viewData;
                     const viewKeys = self._getViewKeys(vd);
-                    self._setValuesForViewKeys(viewKeys, (pt) => {
+                    self._setValuesForViewKeys(viewKeys, ac, (pt) => {
                         self._includePageDependencies((dc) => {
                             app.divApp.innerHTML = pt;
                             app.divApp.style.visibility = "visible";
@@ -159,14 +159,14 @@ class Controller extends App{
         };
         addDepedencie(this.pageDependencies[count]);
     }
-    _setValuesForViewKeys(viewKeys, end = (pt) => {}){
+    _setValuesForViewKeys(viewKeys, ac, end = (pt) => {}){
         let pageText = app.divApp.innerHTML;
         for(let key in viewKeys){
             let rg = new RegExp("\\{\\{\\s*"+key+"\\s*\\}\\}", "gi");
             pageText = pageText.replace(rg, viewKeys[key]);
         }
         const lang = new Language(App.getAppLanguage, this.pageId);
-        pageText = lang.setLanguageKeys(pageText, (pr) => {
+        pageText = lang.setLanguageKeys(pageText, ac, (pr) => {
             pageText = pr;
             pageText = pageText.replace(/\{\{\s*[a-zA-Z0-9\_]*\s*\}\}/gi, "");
             end(pageText);

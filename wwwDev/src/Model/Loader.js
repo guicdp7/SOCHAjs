@@ -29,7 +29,7 @@ class Loader extends Model{
     /*Variáveis Getter e Setter Static */
     static get getLoaderImage(){
         const loaderImg = App.get("model_loader_image", "global");
-        return !App.empty(loaderImg) ? loaderImg : "src/Assets/img/loader.svg";
+        return !App.empty(loaderImg) ? loaderImg : "src/Assets/img/loader.gif";
     }
     static set setLoaderImage(value){
         App.set("model_loader_image", value, "global");

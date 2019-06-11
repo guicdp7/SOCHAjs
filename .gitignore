@@ -1,3 +1,7 @@
+platforms
+plugins
+typings
+.vscode
 node_modules
 www/*.js
 www/*.map
@@ -5,7 +9,9 @@ www/**/*.js
 www/**/*.map
 www/*.html
 www/**/*.html
-www/**/*.json
 www/src/Assets/*
 www/src/Assets/**/*
+www/src/Language/*
 www/src/Css/index.css
+package-lock.json
+jsconfig.json

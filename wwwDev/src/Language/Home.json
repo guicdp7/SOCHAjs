@@ -1,0 +1,16 @@
+{
+    "en-us":{
+        "change_language": "Change language",
+        "description": "Simple Organization for Cordova Hybrid Applications",
+        "english": "English",
+        "portuguese": "Portuguese",
+        "welcome": "Welcome to"
+    },
+    "pt-br":{
+        "change_language": "Alterar o idioma",
+        "description": "Organização simples para aplicativos híbridos em Cordova",
+        "english": "Inglês",
+        "portuguese": "Português",
+        "welcome": "Bem vindo(a) ao"
+    }
+}
