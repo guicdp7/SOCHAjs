@@ -58,7 +58,6 @@ const path = {
 const scssProdOpt = {
     outputStyle: "compressed"
 }, prefixOpt = {
-    browsers: ['last 2 version', '> 5%'],
     cascade: false
 }, htmlMinOpt = {
     collapseWhitespace: true

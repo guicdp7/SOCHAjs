@@ -1,8 +1,16 @@
 {
     "en-us":{
-        "socha": "SOCHAjs"
+        "exit": "exit",
+        "no": "no",
+        "really_want": "do you really want ",
+        "socha": "SOCHAjs",
+        "yes": "yes"
     },
     "pt-br":{
-        "socha": "SOCHAjs"
+        "exit": "sair",
+        "no": "não",
+        "really_want": "você deseja mesmo ",
+        "socha": "SOCHAjs",
+        "yes": "sim"
     }
 }

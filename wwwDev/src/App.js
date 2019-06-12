@@ -14,6 +14,7 @@ class App {
                 docLoad: false,
                 docLoaded: false,
                 deviceReady: false,
+                deviceReaded: false,
                 appReady: false
             };
         }
@@ -50,6 +51,10 @@ class App {
                 navigator.app.overrideButton("menubutton", true);
                 document.addEventListener("menubutton", this.onMenuButtonClick, false);
             }
+            /*Classes padrão */
+            this._readDefaultStyles(() => {
+                this._changeAppStatus("deviceReaded");
+            });
         }
         else {
             console.log("Device has already ready");
@@ -90,7 +95,21 @@ class App {
     }
     /*Eventos Globais */
     onBackButtonClick() {
-
+        App.goBackPage((r) => {
+            if (!r) {
+                const msg = new Message(
+                    App.l("__really_want") + App.data.name + "?",
+                    App.l("__exit"),
+                    "confirm",
+                    [App.l("__yes"), App.l("__no")]
+                );
+                msg.show((r) => {
+                    if (r == 1) {
+                        App.close();
+                    }
+                });
+            }
+        });
     }
     onMenuButtonClick() {
 
@@ -118,7 +137,7 @@ class App {
         appStatus[type] = true;
         App.setAppStatus = appStatus;
         console.log(type);
-        if (appStatus.docLoad && appStatus.deviceReady && appStatus.docLoaded) {
+        if (appStatus.docLoad && appStatus.deviceReady && appStatus.docLoaded && appStatus.deviceReaded) {
             if (!appStatus.appReady) {
                 this.onAppReady();
             }
@@ -155,6 +174,22 @@ class App {
         };
         add();
     }
+    _readDefaultStyles(end = () => { }) {
+        const styles = App.default.styles;
+        let i = 0;
+        const add = () => {
+            if (i < styles.length) {
+                App.addStyle(styles[i], () => {
+                    i++;
+                    add();
+                });
+            }
+            else {
+                end();
+            }
+        };
+        add();
+    }
     /*Variáveis Getter e Setter Static */
     static get getAppLanguage() {
         const appLang = App.get("appLang");
@@ -180,6 +215,10 @@ class App {
         return {
             scripts: [
                 /*Scripts Padrão*/
+            ],
+            styles: [
+                /*Styles Padrão*/
+                "src/Css/index.css"
             ],
             classes: [
                 /*Classes Padrão*/
@@ -233,13 +272,13 @@ class App {
         return res.length > 0 ? (res.length == 1 ? res[0] : res) : false;
     }
     static addScript(path, end = () => { }, once = false) {
-        const scripts = App.get("addedScripts", "session"),
+        const scripts = App.get("addedScripts", "global"),
             add = () => {
                 App.isFile(path, (r) => {
                     if (r) {
                         $.getScript(path, () => {
                             scripts.push(path);
-                            App.set("addedScripts", scripts, "session");
+                            App.set("addedScripts", scripts, "global");
                             end(true);
                         })
                     }
@@ -249,6 +288,32 @@ class App {
                 });
             };
         if (!once || scripts.indexOf(path) == -1) {
+            add();
+        }
+        else {
+            end(false);
+        }
+    }
+    static addStyle(path, end = () => { }) {
+        const self = this,
+            styles = App.get("addedStyles", "global"),
+            add = () => {
+                App.isFile(path, (r) => {
+                    if (r) {
+                        App.ajax(path, (r) => {
+                            const res = self.getValuesForPathKeys(r);
+                            document.head.appendChild(self.createElement("style", { innerHTML: res }));
+                            styles.push(path);
+                            App.set("addedStyles", styles, "global");
+                            end(true);
+                        }, "GET", "text");
+                    }
+                    else {
+                        end(false);
+                    }
+                });
+            };
+        if (styles.indexOf(path) == -1) {
             add();
         }
         else {
@@ -394,6 +459,9 @@ class App {
         }
         return true;
     }
+    static f(filePath) {
+        return App.getAppPath + "src/Assets" + filePath;
+    }
     static firstLetter(text = "", action = "upper") {
         let result = text;
         if (action == "upper") {
@@ -437,6 +505,24 @@ class App {
         });
         return value;
     }
+    static getValuesForPathKeys(text = "") {
+        const rx = /\{\{\s*\/[a-zA-Z0-9_\s\\/-]*\.[a-zA-Z0-9]*\s*\}\}/gi,
+            paths = [];
+        let result = text, val = null;
+        do {
+            val = rx.exec(text);
+            if (val) {
+                paths.push(val[0]);
+            }
+        } while (val);
+        for (let i = 0; i < paths.length; i++) {
+            let path = paths[i].replace("{{", "").replace("}}", "").trim(),
+                regex = new RegExp(paths[i], "g");
+            path = App.f(path);
+            result = result.replace(regex, path);
+        }
+        return result;
+    }
     static goBackPage(end = (pc) => { }) {
         const pageHistory = App.getPageHistory;
         const length = pageHistory.length;
@@ -452,7 +538,7 @@ class App {
         }
         return false;
     }
-    static includeHTML(end = () => { }, elements = [], paths = [], parentElement = app.divApp) {
+    static includeHTML(end = (r) => { }, elements = [], paths = [], parentElement = app.divApp, innerHTML = true) {
         if (App.empty(elements)) {
             elements = App.$("*", parentElement);
         }
@@ -483,7 +569,10 @@ class App {
                                     };
                                     App.ajax(file, (r2, s) => {
                                         if (s == 200) {
-                                            element.innerHTML += r2;
+                                            if (innerHTML) {
+                                                element.innerHTML += r2;
+                                            }
+                                            arrayFiles[fileId].text = r2;
                                             searchIncludeHTML(elements[++count]);
                                         }
                                         else {
@@ -586,6 +675,9 @@ class App {
             return true;
         }
         return false;
+    }
+    static l(key) {
+        return Language.getPageKey(key);
     }
     static MD5(d) {
         function M(d) {

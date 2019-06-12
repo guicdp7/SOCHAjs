@@ -29,6 +29,14 @@ class Language extends Model {
     }
     /*Funções Static Públicas */
     static getPageKey(key){
+        const firstChar = key.charAt(0);
+        if (firstChar == "_"){
+            const secondChar = key.charAt(1);
+            if (secondChar == "_"){
+                return App.firstLetter(Language.getPageKeys[key.slice(2)]);
+            }
+            return App.firstLetter(Language.getPageKeys[key.slice(1)], "lower");
+        }
         return Language.getPageKeys[key];
     }
     /*Funções Públicas */
