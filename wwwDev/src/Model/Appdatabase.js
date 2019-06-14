@@ -4,19 +4,18 @@ class Appdatabase extends Model{
         super();
         /*Variáveis */
     }
-    /*Funções Publicas */
-    select(table, items = [], where = {}, end = (r) => {}, forceOnline = false){
-        const selfSelect = super.select;
-        const self = this, totalBase = selfSelect(table);
-        let localData = selfSelect(table, items, where);
+    /*Funções Static Publicas */
+    static select(table, items = [], where = {}, end = (r) => {}, join = [], forceOnline = false){
+        const totalBase = Model.select(table);
+        let localData = Model.select(table, items, where, join);
         if (App.empty(totalBase) || forceOnline){
             const apiTable = new Api("update/tables?table=" + table, { retorno: "json" });
             apiTable.send((r) => {
                 if (!App.empty(r)){
                     if (!r.error){
-                        self.delete(tab);
-                        self.insert(tab, r);
-                        localData = selfSelect(table, items, where);
+                        Model.delete(tab);
+                        Model.insert(tab, r);
+                        localData = Model.select(table, items, where, join);
                     }
                     else{
                         console.log(r.error);
@@ -29,8 +28,7 @@ class Appdatabase extends Model{
             end(localData);
         }
     }
-    updateTables(tables = [], end = () => {}){
-        const self = this;
+    static updateTables(tables = [], end = () => {}){
         if (!App.empty(tables)) {
             let count = 0;
             const getTab = (tab) => {
@@ -39,8 +37,8 @@ class Appdatabase extends Model{
                     apiTable.send((r) => {
                         if (!App.empty(r)){
                             if (!r.error){
-                                self.delete(tab);
-                                self.insert(tab, r);
+                                Model.delete(tab);
+                                Model.insert(tab, r);
                                 getTab(tables[++count]);
                             }
                             else{

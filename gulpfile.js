@@ -29,10 +29,6 @@ const path = {
         }
     },
     js: {
-        root: {
-            dev: "./wwwDev/*.js",
-            dest: "./www/"
-        },
         src: {
             dev: "./wwwDev/src/*.js",
             dest: "./www/src"
@@ -103,12 +99,6 @@ function htmlView() {
 };
 
 /*javascript */
-function scripts() {
-    return gulp.src(path.js.root.dev)
-        .pipe(babel(babelOpt))
-        .pipe(uglify())
-        .pipe(gulp.dest(path.js.root.dest));
-};
 function srcScripts() {
     return gulp.src(path.js.src.dev)
         .pipe(babel(babelOpt))
@@ -133,13 +123,12 @@ function watch() {
     gulp.watch([path.scss.watch], styles);
     gulp.watch([path.html.index.dev], htmlIndex);
     gulp.watch([path.html.view.dev], htmlView);
-    gulp.watch([path.js.root.dev], scripts);
     gulp.watch([path.js.src.dev], srcScripts);
     gulp.watch([path.js.controller.dev], controllerScripts);
     gulp.watch([path.js.model.dev], modelScripts);
     gulp.watch([path.json.language.dev], json);
 };
 
-let build = gulp.parallel(assets, styles, htmlIndex, htmlView, scripts, srcScripts, controllerScripts, modelScripts, json, watch);
+let build = gulp.parallel(assets, styles, htmlIndex, htmlView, srcScripts, controllerScripts, modelScripts, json, watch);
 
 gulp.task('default', build);

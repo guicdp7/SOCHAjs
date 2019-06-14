@@ -118,16 +118,15 @@ class App {
     _getAppData(end = () => { }) {
         const apiUpdate = new Api("update", { retorno: "json" });
         apiUpdate.send((r) => {
-            if (!App.empty(r)){
+            if (!App.empty(r)) {
                 if (!App.empty(r.tables)) {
-                    const db = new Appdatabase();
-                    db.updateTables(r.tables, end);
+                    Appdatabase.updateTables(r.tables, end);
                 }
-                else{
+                else {
                     end();
                 }
             }
-            else{
+            else {
                 end();
             }
         });
@@ -392,17 +391,17 @@ class App {
                 if (typeof elmt == "string") {
                     elmt = App.$(elmt);
                 }
-                if (action == "contains"){
+                if (action == "contains") {
                     let hasClass = true;
                     for (let j = 0; j < classes.length; j++) {
                         hasClass = elmt.classList[action](classes[j]);
-                        if (!hasClass){
+                        if (!hasClass) {
                             break;
                         }
                     }
                     classes = hasClass;
                 }
-                else{
+                else {
                     for (let j = 0; j < classes.length; j++) {
                         elmt.classList[action](classes[j]);
                     }
@@ -482,6 +481,15 @@ class App {
         }
         return App.empty(res) ? [] : JSON.parse(res);
     }
+    static getArrayIndexes(array = [], value = "") {
+        const arrayIndexes = [];
+        for (let i = 0; i < array.length; i++) {
+            if (array[i] == value) {
+                arrayIndexes.push(array[i]);
+            }
+        }
+        return arrayIndexes;
+    }
     static getFile(name, end = (r) => { }, is_temp = false, is_exclusive = false) {
         const types = [window.TEMPORARY, window.PERSISTENT],
             fileError = (cod) => { end({ error: cod }); };
@@ -496,6 +504,16 @@ class App {
             str.push(encodeURIComponent(key) + "=" + encodeURIComponent(obj[key]));
         }
         return str.join("&");
+    }
+    static getArrayByObjectKey(array = [], key = "") {
+        const arrayResult = [];
+        for (let i = 0; i < array.length; i++) {
+            let obj = array[i];
+            if (!App.empty(obj[key])) {
+                arrayResult.push(obj[key]);
+            }
+        }
+        return arrayResult;
     }
     static getUrlParameter(name, link = location.href) {
         let tmp = [], value = false;
