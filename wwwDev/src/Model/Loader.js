@@ -27,6 +27,9 @@ class Loader extends Model{
     }
 
     /*Variáveis Getter e Setter Static */
+    static get getFullLoaderStatus(){
+        return !App.class("has", Loader._divLoader, Loader.getLoadedClass);
+    }
     static get getLoaderImage(){
         const loaderImg = App.get("model_loader_image", "global");
         return !App.empty(loaderImg) ? loaderImg : App.f("/img/loader.gif");
@@ -73,6 +76,10 @@ class Loader extends Model{
         return false;
     }
     static hide(){
+        const lastPull = App.get("last_pull_to_do", "global");
+        if (!App.empty(lastPull)){
+            lastPull.add();
+        }
         App.class("add", Loader._divLoader, Loader.getLoadedClass);
     }
     static remove(object){
@@ -89,6 +96,10 @@ class Loader extends Model{
         return false;
     }
     static show(){
+        const lastPull = App.get("last_pull_to_do", "global");
+        if (!App.empty(lastPull)){
+            lastPull.remove(false);
+        }
         App.class("remove", Loader._divLoader, Loader.getLoadedClass);
     }
 }

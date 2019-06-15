@@ -234,7 +234,8 @@ class App {
                 "Model/Library",
                 "Model/Loader",
                 "Model/Api",
-                "Model/Message"
+                "Model/Message",
+                "Model/PullToDo"
             ]
         };
     }
@@ -492,11 +493,13 @@ class App {
         let res = [];
         if (storageType == "global") {
             res = _global[key];
+            res = App.empty(res) ? [] : res;
         }
         else {
             res = window[storageType + "Storage"].getItem(key);
+            res = App.empty(res) ? [] : JSON.parse(res);
         }
-        return App.empty(res) ? [] : JSON.parse(res);
+        return res;
     }
     static getArrayIndexes(array = [], value = "") {
         const arrayIndexes = [];
@@ -814,6 +817,10 @@ class App {
                                     args: args
                                 });
                                 App.setPageHistory = pageHistory;
+                                const lastPull = App.get("last_pull_to_do", "global");
+                                if (!App.empty(lastPull)) {
+                                    lastPull.remove(false);
+                                }
                                 const pageClass = new controllerClass(pageId, args);
                                 pageClass.loadPage((ac, vd, dc) => {
                                     pageClass.onPageReady(ac, vd, dc);
@@ -840,23 +847,72 @@ class App {
         if (typeof element == "string") {
             element = App.$(element);
         }
-        let children = element.children.length;
-        while (element.lastChild) {
-            if (keep == children) {
-                break;
+        if (keep > 0) {
+            let children = element.children.length;
+            while (element.lastChild) {
+                if (keep == children) {
+                    break;
+                }
+                element.removeChild(element.lastChild);
+                children--;
             }
-            element.removeChild(element.lastChild);
-            children--;
+        }
+        else {
+            element.innerHTML = "";
         }
     }
     static set(key, value = [], storageType = "local") {
         if (storageType == "global") {
-            _global[key] = JSON.stringify(value);
+            _global[key] = value;
         }
         else {
             window[storageType + "Storage"].setItem(key, JSON.stringify(value));
         }
         return value;
+    }
+    /*
+        -- swipeDetect --
+        threshold - required min distance traveled to be considered swipe
+        restraint - maximum distance allowed at the same time in perpendicular direction
+        allowedTime - maximum time allowed to travel that distance
+    */
+    static swipeDetect(element, end = (swipedir) => { }, threshold = 100, restraint = 100, allowedTime = 300) {
+        if (typeof element == "string") {
+            element = App.$(element);
+        }
+        const touchsurface = element;
+        let swipedir,
+            dist,
+            startX,
+            startY,
+            distX,
+            distY,
+            elapsedTime,
+            startTime;
+
+        touchsurface.addEventListener('touchstart', function (e) {
+            var touchobj = e.changedTouches[0];
+            swipedir = 'none';
+            dist = 0;
+            startX = touchobj.pageX;
+            startY = touchobj.pageY;
+            startTime = new Date().getTime();
+        }, false);
+        touchsurface.addEventListener('touchend', function (e) {
+            var touchobj = e.changedTouches[0];
+            distX = touchobj.pageX - startX;
+            distY = touchobj.pageY - startY;
+            elapsedTime = new Date().getTime() - startTime;
+            if (elapsedTime <= allowedTime) {
+                if (Math.abs(distX) >= threshold && Math.abs(distY) <= restraint) {
+                    swipedir = (distX < 0) ? 'e' : 'd';
+                }
+                else if (Math.abs(distY) >= threshold && Math.abs(distX) <= restraint) {
+                    swipedir = (distY < 0) ? 'c' : 'b';
+                }
+            }
+            end(swipedir);
+        }, false);
     }
 }
 const app = new App();
