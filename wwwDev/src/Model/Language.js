@@ -76,7 +76,12 @@ class Language extends Model {
                         App.ajax(App.getAppPath + filePath, (r) => {
                             if (!App.empty(r)) {
                                 if (!r.error) {
-                                    langKeys = App.arrayPush(langKeys, r[self.language], "object");
+                                    if (!App.empty(r[self.language])){
+                                        langKeys = App.arrayPush(langKeys, r[self.language], "object");
+                                    }
+                                    else{
+                                        console.log("Error getting Language " + self.language + " at " + fileId);
+                                    }
                                 }
                                 else {
                                     console.log("Error getting Language " + fileId + ".json file: " + r.error);

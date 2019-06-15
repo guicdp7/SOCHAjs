@@ -29,7 +29,7 @@ class Loader extends Model{
     /*Variáveis Getter e Setter Static */
     static get getLoaderImage(){
         const loaderImg = App.get("model_loader_image", "global");
-        return !App.empty(loaderImg) ? loaderImg : "src/Assets/img/loader.gif";
+        return !App.empty(loaderImg) ? loaderImg : App.f("/img/loader.gif");
     }
     static set setLoaderImage(value){
         App.set("model_loader_image", value, "global");
@@ -39,6 +39,13 @@ class Loader extends Model{
     }
     static set setLoaders(value){
         App.set("model_loader_loaders", value, "global");
+    }
+    static get getLoadingClass(){
+        const loadingclass = App.get("model_loading_class", "global");
+        return !App.empty(loadingclass) ? loadingclass : "is-loading";
+    }
+    static set setLoadingClass(value){
+        App.set("model_loading_class", value, "global");
     }
     static get getLoadedClass(){
         const loadedClass = App.get("model_loaded_class", "global");
@@ -50,10 +57,14 @@ class Loader extends Model{
 
     /*Funções Static */
     static add(object){
+        if (typeof object == "string"){
+            object = App.$(object);
+        }
         let loaders = Loader.getLoaders;
         loaders = Array.isArray(loaders) ? {} : loaders;
         if (!loaders[object.id]){
             loaders[object.id] = object.innerHTML;
+            App.class("add", object, Loader.getLoadingClass);
             object.innerHTML = "<img src='" + Loader.getLoaderImage + "'/>";
             object.disabled = true;
             Loader.setLoaders = loaders;
@@ -69,6 +80,7 @@ class Loader extends Model{
         loaders = Array.isArray(loaders) ? {} : loaders;
         if (loaders[object.id] || loaders[object.id] === ""){
             object.innerHTML = loaders[object.id];
+            App.class("remove", object, Loader.getLoadingClass);
             object.disabled = false;
             delete loaders[object.id];
             Loader.setLoaders = loaders;

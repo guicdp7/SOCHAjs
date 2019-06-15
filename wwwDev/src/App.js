@@ -4,8 +4,8 @@ class App {
     /*Eventos Iniciais */
     constructor() {
         /*Variáveis */
+        this.user = App.get("thisUser");
         this.divApp = null;
-        this.thisUser = null;
 
         /*Status do App */
         this._updateStatus = App.get("updateStatus");
@@ -62,8 +62,8 @@ class App {
     }
     /*O App já carregou */
     onAppReady() {
-        Loader.show();
         if (!App.getAppStatus.appReady) {
+            Loader.show();
             this._changeAppStatus("appReady");
             this.divApp = App.$("#divApp");
             this.checkUpdates(() => {
@@ -840,7 +840,7 @@ class App {
         if (typeof element == "string") {
             element = App.$(element);
         }
-        const children = element.children.length;
+        let children = element.children.length;
         while (element.lastChild) {
             if (keep == children) {
                 break;
