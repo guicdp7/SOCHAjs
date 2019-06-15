@@ -2,6 +2,8 @@
     "en-us":{
         "exit": "exit",
         "no": "no",
+        "no_connection": "To continue, you must be connected to the internet.",
+        "not_connected": "Not connected!",
         "really_want": "do you really want ",
         "socha": "SOCHAjs",
         "yes": "yes"
@@ -9,6 +11,8 @@
     "pt-br":{
         "exit": "sair",
         "no": "não",
+        "no_connection": "Para continuar, você precisa estar conectado á internet.",
+        "not_connected": "Não conectado!",
         "really_want": "você deseja mesmo ",
         "socha": "SOCHAjs",
         "yes": "sim"

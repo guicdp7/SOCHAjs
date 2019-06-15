@@ -73,7 +73,7 @@ class Language extends Model {
             if (count < jsonFiles.length) {
                 App.isFile(filePath, (is_file) => {
                     if (is_file) {
-                        App.ajax(filePath, (r) => {
+                        App.ajax(App.getAppPath + filePath, (r) => {
                             if (!App.empty(r)) {
                                 if (!r.error) {
                                     langKeys = App.arrayPush(langKeys, r[self.language], "object");

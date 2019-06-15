@@ -83,7 +83,7 @@ class App {
                 this._getAppData(end);
             }
             else {
-                const msg = new Message("Para que possamos continuar, você precisa estar conectado á internet.", "Você não está conectado!");
+                const msg = new Message(App.l("__no_connection"), App.l("__not_connected"));
                 msg.show((r) => {
                     App.close();
                 });
@@ -121,6 +121,11 @@ class App {
             if (!App.empty(r)) {
                 if (!App.empty(r.tables)) {
                     Appdatabase.updateTables(r.tables, end);
+                    this._updateStatus = {
+                        lastUpdate: new Date(),
+                        appDataResponse: r
+                    };
+                    App.set("updateStatus", this._updateStatus);
                 }
                 else {
                     end();
@@ -294,6 +299,9 @@ class App {
         }
     }
     static addStyle(path, end = () => { }) {
+        if (path.indexOf("://") == -1) {
+            path = App.getAppPath + path;
+        }
         const self = this,
             styles = App.get("addedStyles", "global"),
             add = () => {
@@ -332,25 +340,34 @@ class App {
         return false;
     }
     static ajax(url, end = (r, s) => { }, method = "GET", responseType = "json", data = {}, headers = []) {
-        const req = jQuery.ajax({
-            url: url,
-            cache: false,
-            method: method,
-            dataType: responseType,
-            data: App.getHttpQueryByObject(data),
-            beforeSend: (r) => {
-                for (let key in headers) {
-                    r.setRequestHeader(key, headers[key]);
+        if (url.indexOf("://") == -1) {
+            url = App.data.apiLink + url;
+        }
+        if (responseType == "blob" || responseType == "binary") {
+            end(null, "Unsupported response type");
+            return false;
+        }
+        else {
+            const req = jQuery.ajax({
+                url: url,
+                cache: false,
+                method: method,
+                dataType: responseType,
+                data: App.getHttpQueryByObject(data),
+                beforeSend: (r) => {
+                    for (let key in headers) {
+                        r.setRequestHeader(key, headers[key]);
+                    }
+                },
+                success: (data, textStatus, xhr) => {
+                    end(data, xhr.status);
+                },
+                error: (data, textStatus, xhr) => {
+                    end(null, xhr);
                 }
-            },
-            success: (data, textStatus, xhr) => {
-                end(data, xhr.status);
-            },
-            error: (data, textStatus, xhr) => {
-                end(null, xhr.status);
-            }
-        });
-        return req;
+            });
+            return req;
+        }
     }
     static arrayPush(array1 = [], array2 = [], type = "array") {
         let array = [];
@@ -379,7 +396,7 @@ class App {
         if (!App.empty(elements)) {
             action = action == "has" ? "contains" : action;
             if (!Array.isArray(elements)) {
-                if (!elements[0] && elements !== false) {
+                if ((!elements[0] || typeof elements == "string") && elements !== false) {
                     elements = [elements];
                 }
             }
@@ -585,7 +602,7 @@ class App {
                                         file: file,
                                         parent: element
                                     };
-                                    App.ajax(file, (r2, s) => {
+                                    App.ajax(App.getAppPath + file, (r2, s) => {
                                         if (s == 200) {
                                             if (innerHTML) {
                                                 element.innerHTML += r2;
@@ -635,7 +652,7 @@ class App {
             end(classObject);
         }
         catch (e) {
-            App.ajax("src/" + className + ".js", (r, s) => {
+            App.ajax(App.getAppPath + "src/" + className + ".js", (r, s) => {
                 scriptsTag.innerHTML += r;
                 if (s == 200) {
                     end(eval(lastClass));
@@ -747,6 +764,37 @@ class App {
         var result = M(V(Y(X(d), 8 * d.length)));
         return result.toLowerCase()
     }
+    static numberFormat(number = 0, decimals = 2, dec_point = ".", thousands_sep = false, older_dec_point = ".") {
+        number = Api.numberUnformat(number, older_dec_point) + '';
+        if (number !== false) {
+            let n = !isFinite(+number) ? 0 : +number,
+                prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
+                sep = thousands_sep === false ? '' : thousands_sep,
+                s = '',
+                toFixedFix = (n, prec) => {
+                    let k = Math.pow(10, prec);
+                    return '' + Math.round(n * k) / k;
+                };
+            s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
+            if (s[0].length > 3) {
+                s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep);
+            }
+            if ((s[1] || '').length < prec) {
+                s[1] = s[1] || '';
+                s[1] += new Array(prec - s[1].length + 1).join('0');
+            }
+            return s.join(dec_point);
+        }
+        return false;
+    }
+    static numberUnformat(number = "", dec_point = ".") {
+        let reg = new RegExp("\\" + dec_point, "g");
+        number = (number + '').replace(reg, ".").replace(/[^0-9+\-Ee.]/g, '');
+        if (isNaN(number)) {
+            return false;
+        }
+        return Number(number);
+    }
     static openPage(page, args = [], end = (pc) => { }) {
         const self = this,
             pageId = page.charAt(0).toUpperCase() + page.slice(1);
@@ -786,6 +834,19 @@ class App {
         else {
             end();
             console.log("This Page Is Already Open");
+        }
+    }
+    static removeChildren(element, keep = 0) {
+        if (typeof element == "string") {
+            element = App.$(element);
+        }
+        const children = element.children.length;
+        while (element.lastChild) {
+            if (keep == children) {
+                break;
+            }
+            element.removeChild(element.lastChild);
+            children--;
         }
     }
     static set(key, value = [], storageType = "local") {
