@@ -196,13 +196,16 @@ class App {
     }
     /*Variáveis Getter e Setter Static */
     static get getAppLanguage() {
-        const appLang = App.get("appLang");
-        return !App.empty(appLang) ? appLang : "pt-br";
+        let appLang = App.get("appLang");
+        appLang = !App.empty(appLang) ? appLang : "pt-br";
+        document.documentElement.lang = appLang;
+        return appLang;
     }
     static get getAppStatus() {
         return App.get("appStatus", "global");
     }
     static set setAppLanguage(value) {
+        document.documentElement.lang = value;
         App.set("appLang", value);
     }
     static set setAppStatus(value) {
@@ -251,7 +254,7 @@ class App {
         return false;
     }
     static get getAppPath() {
-        return location.href.replace("index.html", "");
+        return location.href.replace("#", "").replace("index.html", "");
     }
     static get getPageHistory() {
         return App.get("pageHistory", "global");
@@ -340,7 +343,7 @@ class App {
         }
         return false;
     }
-    static ajax(url, end = (r, s) => { }, method = "GET", responseType = "json", data = {}, headers = []) {
+    static ajax(url, end = (r, s) => { }, method = "GET", responseType = "json", data = {}, headers = {}) {
         if (url.indexOf("://") == -1) {
             url = App.data.apiLink + url;
         }
@@ -349,6 +352,16 @@ class App {
             return false;
         }
         else {
+            if (url.indexOf("http") == 0 && url.indexOf(App.getAppPath) == -1) {
+                const dUrls = url.split("?");
+                const urls = dUrls[0].split("/");
+                const lastUrl = urls[urls.length - 1];
+                if (!App.empty(lastUrl)){
+                    urls[urls.length -1] = lastUrl + "/";
+                }
+                url = urls.join("/") + (dUrls.length > 1 ? "?" + dUrls[1] : "");
+                url = url + (url.indexOf("?") > -1 ? "&" : "?") + "_cachehash=" + App.MD5(new Date().getTime());
+            }
             const req = jQuery.ajax({
                 url: url,
                 cache: false,
@@ -454,6 +467,32 @@ class App {
             console.log("Can't Close this App");
         }
     }
+    static dateFormat(date = "", format = "d/m/Y"){
+        const zero = (n) => {
+            if (n < 10){
+                return "0" + n;
+            }
+            return n;
+        };
+        let dateText = format;
+        if (typeof date == "string"){
+            date = new Date(date.replace(" ", "T"));
+        }
+        const values = {
+            d: zero(date.getDate()),
+            m: zero(date.getMonth() + 1),
+            Y: date.getFullYear(),
+            y: date.getFullYear().toString().substring(2),
+            h: zero(date.getHours()),
+            i: zero(date.getMinutes()),
+            s: zero(date.getSeconds())
+        };
+        for(let key in values){
+            let rg = new RegExp(key, "g");
+            dateText = dateText.replace(rg, values[key]);
+        }
+        return dateText;
+    }
     static empty(value) {
         const notEmpty = [
             "number", "bigint", "function", "boolean", "symbol"
@@ -496,7 +535,7 @@ class App {
             res = App.empty(res) ? [] : res;
         }
         else {
-            res = window[storageType + "Storage"].getItem(key);
+            res = window[storageType + "Storage"].getItem(App.data.name + "_" + key);
             res = App.empty(res) ? [] : JSON.parse(res);
         }
         return res;
@@ -817,10 +856,7 @@ class App {
                                     args: args
                                 });
                                 App.setPageHistory = pageHistory;
-                                const lastPull = App.get("last_pull_to_do", "global");
-                                if (!App.empty(lastPull)) {
-                                    lastPull.remove(false);
-                                }
+                                PullToDo.removeAll();
                                 const pageClass = new controllerClass(pageId, args);
                                 pageClass.loadPage((ac, vd, dc) => {
                                     pageClass.onPageReady(ac, vd, dc);
@@ -866,7 +902,7 @@ class App {
             _global[key] = value;
         }
         else {
-            window[storageType + "Storage"].setItem(key, JSON.stringify(value));
+            window[storageType + "Storage"].setItem(App.data.name + "_" + key, JSON.stringify(value));
         }
         return value;
     }
