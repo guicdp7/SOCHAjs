@@ -13,8 +13,8 @@ class Appdatabase extends Model{
             apiTable.send((r) => {
                 if (!App.empty(r)){
                     if (!r.error){
-                        Model.delete(tab);
-                        Model.insert(tab, r);
+                        Model.delete(table);
+                        Model.insert(table, r);
                         localData = Model.select(table, items, where, join);
                     }
                     else{

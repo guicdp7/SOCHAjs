@@ -31,11 +31,8 @@ class App {
     onDocLoad() {
         if (!App.getAppStatus.docLoad) {
             this._changeAppStatus("docLoad");
-            this._readDefaultScripts(() => {
-                this._readDefaultClasses(() => {
-                    this._changeAppStatus("docLoaded");
-                });
-            });
+
+            this._changeAppStatus("docLoaded");
         }
         else {
             console.log("Document has already loaded");
@@ -51,9 +48,13 @@ class App {
                 navigator.app.overrideButton("menubutton", true);
                 document.addEventListener("menubutton", this.onMenuButtonClick, false);
             }
-            /*Classes padrão */
-            this._readDefaultStyles(() => {
-                this._changeAppStatus("deviceReaded");
+            /*Classes, estilos e scripts padrão */
+            App._readDefaultStyles(() => {
+                App._readDefaultScripts(() => {
+                    App._readDefaultClasses(() => {
+                        this._changeAppStatus("deviceReaded");
+                    });
+                });
             });
         }
         else {
@@ -147,53 +148,6 @@ class App {
             }
         }
     }
-    _readDefaultClasses(end = () => { }) {
-        const classes = App.default.classes;
-        let count = 0;
-        const add = (defaultClass) => {
-            if (count < classes.length && defaultClass) {
-                App.import(defaultClass, () => {
-                    add(classes[++count]);
-                });
-            }
-            else {
-                end(classes[++count]);
-            }
-        };
-        add(classes[count]);
-    }
-    _readDefaultScripts(end = () => { }) {
-        const scripts = App.default.scripts;
-        let i = 0;
-        const add = () => {
-            if (i < scripts.length) {
-                App.addScript(scripts[i], () => {
-                    i++;
-                    add();
-                });
-            }
-            else {
-                end();
-            }
-        };
-        add();
-    }
-    _readDefaultStyles(end = () => { }) {
-        const styles = App.default.styles;
-        let i = 0;
-        const add = () => {
-            if (i < styles.length) {
-                App.addStyle(styles[i], () => {
-                    i++;
-                    add();
-                });
-            }
-            else {
-                end();
-            }
-        };
-        add();
-    }
     /*Variáveis Getter e Setter Static */
     static get getAppLanguage() {
         let appLang = App.get("appLang");
@@ -270,8 +224,55 @@ class App {
     static set setPageHistory(value) {
         App.set("pageHistory", value, "global");
     }
-
-    /*Funções Static */
+    /*Funções Static Privadas */
+    static _readDefaultClasses(end = () => { }) {
+        const classes = App.default.classes;
+        let count = 0;
+        const add = (defaultClass) => {
+            if (count < classes.length && defaultClass) {
+                App.import(defaultClass, () => {
+                    add(classes[++count]);
+                });
+            }
+            else {
+                end(classes[++count]);
+            }
+        };
+        add(classes[count]);
+    }
+    static _readDefaultScripts(end = () => { }) {
+        const scripts = App.default.scripts;
+        let i = 0;
+        const add = () => {
+            if (i < scripts.length) {
+                App.addScript(scripts[i], () => {
+                    i++;
+                    add();
+                });
+            }
+            else {
+                end();
+            }
+        };
+        add();
+    }
+    static _readDefaultStyles(end = () => { }) {
+        const styles = App.default.styles;
+        let i = 0;
+        const add = () => {
+            if (i < styles.length) {
+                App.addStyle(styles[i], () => {
+                    i++;
+                    add();
+                });
+            }
+            else {
+                end();
+            }
+        };
+        add();
+    }
+    /*Funções Static Públicas */
     static $(selector, parent = document) {
         let res = parent.querySelectorAll(selector);
         if (!res.length && ["#", ".", "*"].indexOf(selector.charAt(0)) == -1) {
@@ -356,15 +357,15 @@ class App {
                 const dUrls = url.split("?");
                 const urls = dUrls[0].split("/");
                 const lastUrl = urls[urls.length - 1];
-                if (!App.empty(lastUrl)){
-                    urls[urls.length -1] = lastUrl + "/";
+                if (!App.empty(lastUrl)) {
+                    urls[urls.length - 1] = lastUrl + "/";
                 }
                 url = urls.join("/") + (dUrls.length > 1 ? "?" + dUrls[1] : "");
                 url = url + (url.indexOf("?") > -1 ? "&" : "?") + "_cachehash=" + App.MD5(new Date().getTime());
             }
             const req = jQuery.ajax({
                 url: url,
-                cache: false,
+                cache: true,
                 method: method,
                 dataType: responseType,
                 data: App.getHttpQueryByObject(data),
@@ -467,15 +468,15 @@ class App {
             console.log("Can't Close this App");
         }
     }
-    static dateFormat(date = "", format = "d/m/Y"){
+    static dateFormat(date = "", format = "d/m/Y") {
         const zero = (n) => {
-            if (n < 10){
+            if (n < 10) {
                 return "0" + n;
             }
             return n;
         };
         let dateText = format;
-        if (typeof date == "string"){
+        if (typeof date == "string") {
             date = new Date(date.replace(" ", "T"));
         }
         const values = {
@@ -487,7 +488,7 @@ class App {
             i: zero(date.getMinutes()),
             s: zero(date.getSeconds())
         };
-        for(let key in values){
+        for (let key in values) {
             let rg = new RegExp(key, "g");
             dateText = dateText.replace(rg, values[key]);
         }
@@ -838,8 +839,7 @@ class App {
         return Number(number);
     }
     static openPage(page, args = [], end = (pc) => { }) {
-        const self = this,
-            pageId = page.charAt(0).toUpperCase() + page.slice(1);
+        const pageId = page.charAt(0).toUpperCase() + page.slice(1);
         if (App.getThisPage.id != pageId) {
             const pageFiles = {
                 controller: "src/Controller/" + pageId + ".js",
@@ -860,7 +860,10 @@ class App {
                                 const pageClass = new controllerClass(pageId, args);
                                 pageClass.loadPage((ac, vd, dc) => {
                                     pageClass.onPageReady(ac, vd, dc);
-                                    end(pageClass, ac, dc);
+                                    App._readDefaultScripts(() => {
+                                        lazyLoad.init();
+                                        end(pageClass, ac, dc);
+                                    });
                                 });
                             });
                         }

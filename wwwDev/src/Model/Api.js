@@ -142,6 +142,7 @@ class Api extends Model {
                     end(this._noImagePath, 0);
                     console.log(r.error);
                 }
+                lazyLoad.init();
             }
         });
     }
