@@ -283,17 +283,10 @@ class App {
     static addScript(path, end = () => { }, once = false) {
         const scripts = App.get("addedScripts", "global"),
             add = () => {
-                App.isFile(path, (r) => {
-                    if (r) {
-                        $.getScript(path, () => {
-                            scripts.push(path);
-                            App.set("addedScripts", scripts, "global");
-                            end(true);
-                        })
-                    }
-                    else {
-                        end(false);
-                    }
+                $.getScript(path, () => {
+                    scripts.push(path);
+                    App.set("addedScripts", scripts, "global");
+                    end(true);
                 });
             };
         if (!once || scripts.indexOf(path) == -1) {
@@ -310,20 +303,18 @@ class App {
         const self = this,
             styles = App.get("addedStyles", "global"),
             add = () => {
-                App.isFile(path, (r) => {
+                App.ajax(path, (r) => {
                     if (r) {
-                        App.ajax(path, (r) => {
-                            const res = self.getValuesForPathKeys(r);
-                            document.head.appendChild(self.createElement("style", { innerHTML: res }));
-                            styles.push(path);
-                            App.set("addedStyles", styles, "global");
-                            end(true);
-                        }, "GET", "text");
+                        const res = self.getValuesForPathKeys(r);
+                        document.head.appendChild(self.createElement("style", { innerHTML: res }));
+                        styles.push(path);
+                        App.set("addedStyles", styles, "global");
+                        end(true);
                     }
                     else {
                         end(false);
                     }
-                });
+                }, "GET", "text");
             };
         if (styles.indexOf(path) == -1) {
             add();
@@ -638,39 +629,38 @@ class App {
                     if (fileId) {
                         fileId = App.firstLetter(fileId);
                         const file = "src/View/" + fileId + ".html";
-                        App.isFile(file, (r) => {
-                            if (r) {
-                                if (!arrayFiles[fileId] || arrayFiles[fileId].parent != element) {
-                                    arrayFiles[fileId] = {
-                                        file: file,
-                                        parent: element
-                                    };
-                                    App.ajax(App.getAppPath + file, (r2, s) => {
-                                        if (s == 200) {
-                                            if (innerHTML) {
-                                                element.innerHTML += r2;
-                                            }
-                                            arrayFiles[fileId].text = r2;
-                                            searchIncludeHTML(elements[++count]);
+
+                        if (!arrayFiles[fileId] || arrayFiles[fileId].parent != element) {
+                            arrayFiles[fileId] = {
+                                file: file,
+                                parent: element
+                            };
+                            App.ajax(App.getAppPath + file, (r2, s) => {
+                                if (r2) {
+                                    if (s == 200) {
+                                        if (innerHTML) {
+                                            element.innerHTML += r2;
                                         }
-                                        else {
-                                            arrayFiles[fileId] = {
-                                                error: "File Read Error: " + s
-                                            };
-                                        }
-                                    }, "GET", "text");
+                                        arrayFiles[fileId].text = r2;
+                                        searchIncludeHTML(elements[++count]);
+                                    }
+                                    else {
+                                        arrayFiles[fileId] = {
+                                            error: "File Read Error: " + s
+                                        };
+                                    }
                                 }
-                            }
-                            else {
-                                arrayFiles[fileId] = {
-                                    error: "File Not Found"
-                                };
-                            }
-                            if (!App.empty(includeHtmlAttribute)) {
-                                element.removeAttribute("include-html");
-                            }
-                            element.setAttribute("data-included-id", fileId);
-                        });
+                                else {
+                                    arrayFiles[fileId] = {
+                                        error: "File Not Found"
+                                    };
+                                }
+                                if (!App.empty(includeHtmlAttribute)) {
+                                    element.removeAttribute("include-html");
+                                }
+                                element.setAttribute("data-included-id", fileId);
+                            }, "GET", "text");
+                        }
                     }
                     else {
                         searchIncludeHTML(elements[++count]);
@@ -845,36 +835,22 @@ class App {
                 controller: "src/Controller/" + pageId + ".js",
                 view: "src/View/" + pageId + ".html"
             };
-            App.isFile(pageFiles.controller, (r) => {
-                if (r) {
-                    App.isFile(pageFiles.view, (r2) => {
-                        if (r2) {
-                            App.import("Controller/" + pageId, (controllerClass) => {
-                                let pageHistory = App.getPageHistory;
-                                pageHistory.push({
-                                    id: pageId,
-                                    args: args
-                                });
-                                App.setPageHistory = pageHistory;
-                                PullToDo.removeAll();
-                                const pageClass = new controllerClass(pageId, args);
-                                pageClass.loadPage((ac, vd, dc) => {
-                                    pageClass.onPageReady(ac, vd, dc);
-                                    App._readDefaultScripts(() => {
-                                        lazyLoad.init();
-                                        end(pageClass, ac, dc);
-                                    });
-                                });
-                            });
-                        }
-                        else {
-                            console.log("View " + pageId + " Not Found!");
-                        }
-                    })
-                }
-                else {
-                    console.log("Controller " + pageId + " Not Found!");
-                }
+            App.import("Controller/" + pageId, (controllerClass) => {
+                let pageHistory = App.getPageHistory;
+                pageHistory.push({
+                    id: pageId,
+                    args: args
+                });
+                App.setPageHistory = pageHistory;
+                PullToDo.removeAll();
+                const pageClass = new controllerClass(pageId, args);
+                pageClass.loadPage((ac, vd, dc) => {
+                    pageClass.onPageReady(ac, vd, dc);
+                    App._readDefaultScripts(() => {
+                        lazyLoad.init();
+                        end(pageClass, ac, dc);
+                    });
+                });
             });
         }
         else {

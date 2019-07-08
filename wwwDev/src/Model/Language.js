@@ -71,32 +71,25 @@ class Language extends Model {
         const getJsonFile = (fileId) => {
             const filePath = langPath + fileId + ".json";
             if (count < jsonFiles.length) {
-                App.isFile(filePath, (is_file) => {
-                    if (is_file) {
-                        App.ajax(App.getAppPath + filePath, (r) => {
-                            if (!App.empty(r)) {
-                                if (!r.error) {
-                                    if (!App.empty(r[self.language])){
-                                        langKeys = App.arrayPush(langKeys, r[self.language], "object");
-                                    }
-                                    else{
-                                        console.log("Error getting Language " + self.language + " at " + fileId);
-                                    }
-                                }
-                                else {
-                                    console.log("Error getting Language " + fileId + ".json file: " + r.error);
-                                }
-                                getJsonFile(jsonFiles[++count]);
+                App.ajax(App.getAppPath + filePath, (r) => {
+                    if (!App.empty(r)) {
+                        if (!r.error) {
+                            if (!App.empty(r[self.language])){
+                                langKeys = App.arrayPush(langKeys, r[self.language], "object");
                             }
-                            else {
-                                getJsonFile(jsonFiles[++count]);
+                            else{
+                                console.log("Error getting Language " + self.language + " at " + fileId);
                             }
-                        }, "GET", "json");
+                        }
+                        else {
+                            console.log("Error getting Language " + fileId + ".json file: " + r.error);
+                        }
+                        getJsonFile(jsonFiles[++count]);
                     }
                     else {
                         getJsonFile(jsonFiles[++count]);
                     }
-                });
+                }, "GET", "json");
             }
             else {
                 Language.setPageKeys = langKeys;
